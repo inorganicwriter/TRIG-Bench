@@ -1,0 +1,9 @@
+requests>=2.31.0
+websocket-client>=1.7.0
+openai>=1.10.0
+torch
+transformers
+pillow
+ftfy
+regex
+ultralytics
