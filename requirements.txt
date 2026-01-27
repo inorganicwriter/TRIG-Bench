@@ -7,3 +7,9 @@ pillow
 ftfy
 regex
 ultralytics
+matplotlib
+pandas
+seaborn
+folium
+qa-metrics
+mapie

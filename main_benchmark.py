@@ -1,17 +1,16 @@
 import os
 import argparse
+import json
 import random
-from PIL import Image
-import torch
-from benchmark_engine.relevance_scorer import SemanticRelevanceEngine
-from benchmark_engine.text_injector import VisualAttacker
-from benchmark_engine.distractor_pool import CANDIDATE_CITIES
+import time
+from data_collector.comfy_client import ComfyClient
+from data_collector.utils import load_workflow_api
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Benchmark Generator (Quantitative)")
-    parser.add_argument("--clean-dir", type=str, required=True, help="Directory containing clean images (Step 1 output)")
+    parser = argparse.ArgumentParser(description="Benchmark Generator (LLM + ComfyUI)")
+    parser.add_argument("--attack-file", type=str, required=True, help="Path to attacks.jsonl (from generate_attacks.py)")
     parser.add_argument("--output-dir", type=str, required=True, help="Directory to save final benchmark images")
-    parser.add_argument("--clip-model", type=str, default="openai/clip-vit-base-patch32", help="CLIP model name")
+    parser.add_argument("--comfy-server", type=str, default="127.0.0.1:8188", help="ComfyUI server address")
     parser.add_argument("--limit", type=int, default=0, help="Limit number of images processed")
     return parser.parse_args()
 
@@ -19,101 +18,149 @@ def main():
     args = parse_args()
     os.makedirs(args.output_dir, exist_ok=True)
     
-    # 1. Initialize Engines
-    print("Initializing Engines...")
-    try:
-        scorer = SemanticRelevanceEngine(model_name=args.clip_model)
-        attacker = VisualAttacker() # Will auto-find font or use default
-    except Exception as e:
-        print(f"Failed to initialize engines: {e}")
+    # 1. Initialize ComfyUI Client
+    print(f"Connecting to ComfyUI at {args.comfy_server}...")
+    client = ComfyClient(args.comfy_server)
+    if not client.connect():
+        print("Failed to connect to ComfyUI. Exiting.")
         return
 
-    # 2. Load Images
-    valid_exts = ('.png', '.jpg', '.jpeg', '.webp')
-    image_files = [f for f in os.listdir(args.clean_dir) if f.lower().endswith(valid_exts)]
-    print(f"Found {len(image_files)} clean images.")
+    # 2. Load Workflow Template
+    # We reuse the image edit workflow but change the prompt for addition instead of removal
+    workflow_path = os.path.join("data_collector", "image_qwen_image_edit.json")
+    if not os.path.exists(workflow_path):
+        print(f"Error: Workflow file not found at {workflow_path}")
+        return
+        
+    workflow_template = load_workflow_api(workflow_path)
+    if not workflow_template:
+        print("Error: Failed to load workflow template.")
+        return
+        
+    # Key Node IDs (must match image_qwen_image_edit.json)
+    NODE_ID_LOAD_IMAGE = "78"
+    NODE_ID_PROMPT = "76"
+    NODE_ID_KSAMPLER = "3"
 
-    # 3. Process Loop
+    # 3. Load Attacks
+    print(f"Reading attacks from {args.attack_file}...")
+    attacks = []
+    with open(args.attack_file, 'r', encoding='utf-8') as f:
+        for line in f:
+            attacks.append(json.loads(line))
+            
+    print(f"Found {len(attacks)} entries.")
+
+    # 4. Process Loop
     processed_count = 0
-    for i, filename in enumerate(image_files):
+    
+    for i, entry in enumerate(attacks):
         if args.limit > 0 and processed_count >= args.limit:
             break
             
-        print(f"\n[{i+1}/{len(image_files)}] Processing {filename}...")
-        image_path = os.path.join(args.clean_dir, filename)
+        original_filename = entry.get('original_filename')
+        # We need the CLEAN image path (the result of Step 1)
+        # generated_attacks.py gives us 'clean_image_path' relative to execution root or absolute?
+        # Let's check how generate_attacks.py saves it.
+        # It saves: "clean_image_path": entry.get('output_filename')
+        # We assume clean images are in "data/clean_images/" usually.
+        # But wait, generate_attacks stores the FULL path in 'image_path' key if possible.
+        # Let's rely on 'image_path' from attacks.jsonl which is the clean image path.
         
-        try:
-            original_img = Image.open(image_path).convert("RGB")
-        except Exception as e:
-            print(f"Error loading image: {e}")
-            continue
+        clean_img_path = entry.get('image_path')
+        if not clean_img_path or not os.path.exists(clean_img_path):
+            print(f"Warning: Clean image not found for {original_filename} at {clean_img_path}")
+            # Try constructing it if missing?
+            # Assuming 'data/clean_images' + output_filename
+            clean_img_path = os.path.join("data", "clean_images", entry.get('clean_image_path', ''))
+            if not os.path.exists(clean_img_path):
+                print(f"  -> Still not found at {clean_img_path}. Skipping.")
+                continue
 
-        # A. Relevance Scoring
-        print(f"  > Calculating relevance against {len(CANDIDATE_CITIES)} candidates...")
-        # To speed up, we might randomly sample candidates if list is huge, but 50-100 is fine.
-        categorized = scorer.classify_distractors(original_img, CANDIDATE_CITIES)
+        print(f"\n[{i+1}/{len(attacks)}] Processing {original_filename}...")
         
-        # B. Selection Strategy: Orthogonal Matrix
-        # Semantic Dimension: Hard (Parallel), Mid, Easy (Orthogonal)
-        selected_texts = [] # list of (level, text, score)
+        attack_dict = entry.get('attacks', {})
         
-        if categorized['hard']:
-            selected_texts.append(('hard', categorized['hard'][0][0], categorized['hard'][0][1]))
-        if categorized['mid']:
-            selected_texts.append(('mid', categorized['mid'][0][0], categorized['mid'][0][1]))
-        if categorized['easy']:
-            selected_texts.append(('easy', categorized['easy'][0][0], categorized['easy'][0][1]))
-
-        # C. Generation Loop (Cartesian Product)
-        # We try to apply BOTH "Object" and "Random" strategies to ALL text levels if possible.
-        base_name = os.path.splitext(filename)[0]
-        
-        for sem_level, text, score in selected_texts:
-            # Strategies to try: 
-            # 1. Random/Center (Background/Fixed) -> Corresponds to Level 2/3 Physical
-            # 2. Object (Moving Object) -> Corresponds to Level 1 Physical
+        for attack_type, attack_text in attack_dict.items():
+            # Construct Prompt
+            # "Add the text '{text}' naturally into the scene."
+            prompt = f"Add the text '{attack_text}' to the image naturally. Maintain photorealism."
             
-            strategies = ["random", "object"]
+            print(f"  > Generating {attack_type}: '{attack_text}'")
             
-            for strategy in strategies:
-                # Need to handle Object detection failure inside VisualAttacker?
-                # VisualAttacker handles fallback to random, but we should label it correctly.
-                # However, for the benchmark dataset, we want distinct files.
+            # Prepare Workflow
+            # 1. Upload Clean Image
+            comfy_filename = client.upload_image(clean_img_path)
+            if not comfy_filename:
+                print("    -> Upload failed.")
+                continue
                 
-                target_cls = ['car', 'bus', 'truck', 'person'] if strategy == "object" else None
+            # 2. Configure
+            workflow = workflow_template.copy()
+            
+            if NODE_ID_LOAD_IMAGE in workflow:
+                workflow[NODE_ID_LOAD_IMAGE]["inputs"]["image"] = comfy_filename
+            
+            if NODE_ID_PROMPT in workflow:
+                workflow[NODE_ID_PROMPT]["inputs"]["prompt"] = prompt
                 
-                # We interpret "random" here as general background/fixed placement
+            seed = random.randint(1, 10**14)
+            if NODE_ID_KSAMPLER in workflow:
+                workflow[NODE_ID_KSAMPLER]["inputs"]["seed"] = seed
                 
-                attack_img = attacker.inject_text(
-                    original_img, 
-                    text, 
-                    position=strategy, 
-                    target_class=target_cls
-                )
+            # 3. Queue
+            prompt_res = client.queue_prompt(workflow)
+            if not prompt_res:
+                print("    -> Queue failed.")
+                continue
+            
+            prompt_id = prompt_res['prompt_id']
+            
+            # 4. Wait
+            if not client.wait_for_completion(prompt_id):
+                print("    -> Timeout/Error.")
+                continue
                 
-                # Save Image
-                save_name = f"{base_name}_{sem_level}_{strategy}_{text}.jpg"
-                save_path = os.path.join(args.output_dir, save_name)
-                attack_img.save(save_path, quality=95)
-                print(f"      -> Saved: {save_name} (Sem: {sem_level}, Phy: {strategy})")
+            # 5. Retrieve
+            history = client.get_history(prompt_id)
+            if not history: continue
+            
+            history_data = history[prompt_id]
+            for node_id in history_data['outputs']:
+                node_output = history_data['outputs'][node_id]
+                if 'images' in node_output:
+                    for image in node_output['images']:
+                        image_data = client.get_image(image['filename'], image['subfolder'], image['type'])
+                        if not image_data: continue
 
-                # Save Metadata
-                meta_entry = {
-                    "filename": save_name,
-                    "original_source": filename,
-                    "injected_text": text,
-                    "semantic_difficulty": sem_level, # hard/mid/easy
-                    "relevance_score": float(score),
-                    "physical_level": "Level 1" if strategy == "object" else "Level 2/3",
-                    "injection_strategy": strategy
-                }
-                with open(os.path.join(args.output_dir, "benchmark_meta.jsonl"), "a", encoding="utf-8") as f:
-                    import json
-                    f.write(json.dumps(meta_entry) + "\n")
+                        # Save Image
+                        base_name = os.path.splitext(original_filename)[0]
+                        save_name = f"{base_name}_{attack_type}_{attack_text}.png"
+                        save_path = os.path.join(args.output_dir, save_name)
+                        
+                        with open(save_path, 'wb') as f:
+                            f.write(image_data)
+                        print(f"    -> Saved: {save_name}")
+                        
+                        # Save Metadata
+                        meta_entry = {
+                            "filename": save_name,
+                            "original_source": original_filename,
+                            "clean_source": clean_img_path,
+                            "injected_text": attack_text,
+                            "attack_type": attack_type, # similar, random, adversarial
+                            "prompt_used": prompt,
+                            "seed": seed
+                        }
+                        
+                        meta_path = os.path.join(args.output_dir, "benchmark_meta.jsonl")
+                        with open(meta_path, "a", encoding="utf-8") as meta_f:
+                            meta_f.write(json.dumps(meta_entry) + "\n")
 
         processed_count += 1
 
     print(f"\nBenchmark Generation Complete. Metadata saved to {os.path.join(args.output_dir, 'benchmark_meta.jsonl')}")
+    client.close()
 
 if __name__ == "__main__":
     main()

@@ -2,92 +2,92 @@
 
 **评估视觉语言模型 (VLMs) 在面对对抗性文本攻击时，其地理定位任务的鲁棒性表现。**
 
-本工具包提供了一套端到端的流水线，包含以下核心功能：
-1.  **清洗 (Clean)**：移除基准测试图片中的原始文本（基于 ComfyUI）。
-2.  **生成 (Benchmark Generator)**：基于 **CLIP 语义相关性**，自动筛选出不同难度的干扰地名（Hard/Mid/Easy）。
-3.  **合成 (Synthesize)**：将干扰文本自然地融合到图片中，生成量化的测试数据集。
-4.  **评估 (Evaluate)**：测量添加文本后，SOTA 模型（如 Qwen, Llama, DeepSeek 等）地理定位精度的下降程度。
+TRIG-Bench 提供了一套基于 **LLM (Qwen3-VL)** 和 **ComfyUI** 的全自动化对抗样本生成与评估流水线。它能生成具有高度欺骗性的“幻觉文本”，并将其逼真地融入街景图片中，从而精确测量模型在不同语义干扰下的定位偏差。
 
 ---
 
-## 🚀 核心特性
+## 🚀 核心架构
 
-本基准测试包含两个正交的评估维度：
+本基准测试包含三个核心阶段：
 
-### 维度一：语义难度 (Semantic Difficulty)
-基于 **CLIP Score ($S$)** 衡量干扰文本与视觉场景的相关性：
-1.  **空白对照组 (Control Group)**：$I_{clean}$，测定原生视觉理解能力。
-2.  **语义正交模式 (Simple Mode, $S \le 0.20$)**：文本与场景差异显著（如雪山+"热带雨林"），检测OCR盲从。
-3.  **语义平行模式 (Hard Mode, $S > 0.28$)**：文本与场景视觉风格相似（如东京+"大阪"），构成高似然性陷阱。
+1.  **攻击生成 (Attack Generation)**
+    *   **引擎**: `Qwen/Qwen3-VL-30B-A3B-Thinking`
+    *   **策略**: 根据原始图片内容，智能生成三种类型的干扰文本：
+        *   🔤 **Similar**: 形似/音似词（如 McDonald's -> McDonnel's）。
+        *   🎲 **Random**: 随机无关词。
+        *   😈 **Adversarial**: 语义相反或误导性强的词（如将 "Stop" 改为 "Go"，或地名误导）。
 
-### 维度二：物理交互 (Physical Interaction)
-基于干扰文本与物理环境的结合方式：
-*   🏎️ **Level 1: 移动物体解离 (Moving Object Dissociation)**：利用 **YOLOv8** 将文本附着于汽车/行人，测试前景解耦。
-*   🏯 **Level 2: 文化错位 (Cultural Displacement)**：将冲突文本植入固定环境（背景），构建逻辑悖论。
-*   🗼 **Level 3: 实体幻觉 (Entity Hallucination)**：将高相关文本植入地标建筑，构建多模态协同幻觉。
+2.  **图像合成 (Image Synthesis)**
+    *   **引擎**: **ComfyUI** (Local API)
+    *   **技术**: 利用 VLM 指令编辑能力 (`image_qwen_image_edit` 工作流)，通过 Prompt 引导将干扰文本自然地“生长”在图片中，保持光影和透视的一致性。
 
-*   **全自动流水线**：从原始图片清洗(LaMa) -> 语义分级生成(CLIP+YOLO) -> 自动化评测(vLLM)。
-*   **多模型评估**：支持 Qwen-VL, Llama-Vision, DeepSeek 等所有 OpenAI 兼容接口模型。
+3.  **效能评估 (Evaluation with Paper Metrics)**
+    *   **指标**:
+        *   **WLA (Weighted Localization Accuracy)**: 分级加权定位精度 (1km - 2500km 多尺度)。
+        *   **TBS (Text Bias Score)**: 文本偏差分数 ($Error_{Adv} - Error_{Clean}$)，量化干扰造成的额外误差。
+        *   **TFR (Trap Fall Rate)**: 陷阱命中率（实验性）。
 
 ---
 
 ## 🛠️ 环境要求
 
 *   **Python 3.10+**
-*   **依赖库**：`torch`, `transformers`, `ultralytics` (YOLOv8), `pillow`, `openai` 等（见 requirements.txt）。
-*   **ComfyUI**（仅第一步清洗需要）：本地 `127.0.0.1:8188`。
+*   **核心依赖**: `openai` (vLLM client), `torch`, `matplotlib`, `seaborn`, `folium` (见 `requirements.txt`)
+*   **服务依赖**:
+    *   **ComfyUI**: 需在本地 `127.0.0.1:8188` 启动，并安装 Qwen-Image-Edit 相关工作流节点。
+    *   **vLLM**: 需部署 `Qwen/Qwen3-VL-30B-A3B-Thinking` 模型，默认端口 `8001`。
 
-## 📦 安装说明
+## 📦 安装
 
-1.  克隆代码仓库：
-    ```bash
-    git clone https://github.com/inorganicwriter/TRIG-Bench.git
-    cd TRIG-Bench
-    ```
-
-2.  安装依赖：
-    ```bash
-    pip install -r requirements.txt
-    ```
+```bash
+git clone https://github.com/inorganicwriter/TRIG-Bench.git
+cd TRIG-Bench
+pip install -r requirements.txt
+```
 
 ---
 
 ## 📖 使用指南
 
-### 第一步：生成清洗样本 (Clean Sample Generation)
-使用 ComfyUI 移除图片中的原有文字（路牌、广告等），建立“干净”基准。
+### 第一步：生成攻击配置 (Generate Attacks)
+使用 LLM 分析原图并生成攻击策略。
 
 ```bash
-# 需启动 ComfyUI
-python pipeline.py \
-  --input ./data/raw_images \
-  --output ./data/clean_images \
-  --mode remove \
-  --prompt "Remove all UI text elements from the image."
+python data_collector/generate_attacks.py \
+  --clean-meta ./data/clean_images/metadata.jsonl \
+  --original-dir ./data/raw_images \
+  --output ./data/attacks.jsonl \
+  --model "Qwen/Qwen3-VL-30B-A3B-Thinking"
 ```
 
-### 第二步：生成基准数据集 (Benchmark Generation)
-运行核心生成器。它会自动分析图片内容，从全球城市库中匹配干扰词，并生成带有文字干扰的图片。
+### 第二步：合成对抗样本 (Synthesize)
+调用 ComfyUI 将文字注入图片。
 
 ```bash
 python main_benchmark.py \
-  --clean-dir ./data/clean_images \
+  --attack-file ./data/attacks.jsonl \
   --output-dir ./data/bench_dataset \
-  --clip-model "openai/clip-vit-base-patch32"
+  --comfy-server 127.0.0.1:8188
 ```
-*输出：`bench_dataset/` 目录下将包含生成的图片以及 `benchmark_meta.jsonl`（记录了每张图的干扰类型和难度）。*
 
-### 第三步：模型评估 (Evaluation)
-评估目标模型（如 Qwen3-VL-30B）在对抗数据集上的表现。
+### 第三步：模型评估 (Evaluate)
+运行评估脚本，计算 MGD, WLA, TBS 等指标。
 
 ```bash
-# 需先启动 vLLM 服务 (例如 Qwen3-VL 或 GPT-4o 兼容接口)
 python evaluate.py \
   --img-dir ./data/bench_dataset \
   --metadata-file ./data/yfcc100m_dataset.txt \
-  --output ./results_qwen.jsonl \
-  --model "Qwen/Qwen3-VL-30B-A3B-Thinking" \
-  --api-base http://localhost:8001/v1
+  --bench-meta ./data/bench_dataset/benchmark_meta.jsonl \
+  --output ./results_qwen.jsonl
+```
+
+### 第四步：可视化分析 (Visualize)
+生成 CDF 曲线、误差柱状图和交互式地图。
+
+```bash
+python visualize_results.py \
+  --results Qwen3-VL=./results_qwen.jsonl \
+  --output-dir ./results_viz
 ```
 
 ---
@@ -95,20 +95,16 @@ python evaluate.py \
 ## 📂 项目结构
 
 ```text
-├── benchmark_engine/       # [核心] 基准生成引擎
-│   ├── relevance_scorer.py # CLIP 语义相似度计算
-│   ├── text_injector.py    # PIL 视觉攻击合成
-│   └── distractor_pool.py  # 干扰城市词库
-├── data_collector/         # [模块] 数据采集与清洗
-│   ├── clean_pipeline.py   # 清洗流水线 (Step 1)
-│   ├── comfy_client.py     # ComfyUI 客户端
-│   └── utils.py            # 工具函数
-├── evaluation/             # [模块] 评测工具
-│   ├── metric_calculator.py
-│   └── vllm_client.py
-├── main_benchmark.py       # [入口] 定量生成脚本 (Step 2)
-├── evaluate.py             # [入口] 评估脚本 (Step 3)
-├── LICENSE                 # MIT 许可证
+├── data_collector/         # [模块] 攻击生成与 ComfyUI 客户端
+│   ├── generate_attacks.py # Step 1: LLM 攻击生成
+│   ├── comfy_client.py     # ComfyUI 通信类
+│   └── image_qwen_image_edit.json # ComfyUI 工作流模板
+├── evaluation/             # [模块] 评估指标计算
+│   ├── metric_calculator.py # WLA, TBS, TFR 核心公式
+│   └── vllm_client.py      # 模型推理接口
+├── main_benchmark.py       # [入口] Step 2: 图像合成脚本
+├── evaluate.py             # [入口] Step 3: 评估脚本
+├── visualize_results.py    # [入口] Step 4: 可视化脚本
 └── requirements.txt
 ```
 

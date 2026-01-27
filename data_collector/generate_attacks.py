@@ -15,7 +15,7 @@ def parse_args():
     parser.add_argument("--original-dir", type=str, required=True, help="Directory containing ORIGINAL images (Step 0)")
     parser.add_argument("--output", type=str, required=True, help="Path to save attacks.jsonl")
     parser.add_argument("--api-base", type=str, default="http://localhost:8000/v1", help="LLM API Base URL")
-    parser.add_argument("--model", type=str, default="Qwen/Qwen2.5-VL-7B-Instruct", help="Model name")
+    parser.add_argument("--model", type=str, default="Qwen/Qwen3-VL-30B-A3B-Thinking", help="Model name")
     return parser.parse_args()
 
 def generate_attacks(client, model, image_path):
