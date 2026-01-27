@@ -116,7 +116,7 @@
   },
   "76": {
     "inputs": {
-      "prompt": "Remove all UI text elements from the image. Keep the feeling that the characters and scene are in water. Also, remove the green UI elements at the bottom.",
+      "prompt": "Remove all text from the image.",
       "clip": [
         "38",
         0

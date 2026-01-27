@@ -22,7 +22,7 @@ def parse_args():
     parser.add_argument("--input", type=str, required=True, help="Input folder containing images OR path to attacks.jsonl")
     parser.add_argument("--output", type=str, required=True, help="Output folder for results")
     parser.add_argument("--workflow", type=str, default=DEFAULT_WORKFLOW, help="Path to ComfyUI workflow API JSON")
-    parser.add_argument("--prompt", type=str, default="Remove all UI text elements...", help="Default prompt (used if input is folder)")
+    parser.add_argument("--prompt", type=str, default="Remove all text from the image.", help="Default prompt (used if input is folder)")
     parser.add_argument("--server", type=str, default=DEFAULT_SERVER, help="ComfyUI server address (ip:port)")
     parser.add_argument("--seed", type=int, help="Fixed seed for reproducibility (optional)")
     parser.add_argument("--mode", type=str, choices=["remove", "inpaint", "custom"], default="custom", help="Processing mode")
@@ -126,7 +126,9 @@ def main():
                     # If it has "attacks" dict (from generate_attacks.py)
                     if 'attacks' in entry and isinstance(entry['attacks'], dict):
                         for attack_type, attack_text in entry['attacks'].items():
-                            item['prompts'].append({'type': attack_type, 'text': f"Add text: '{attack_text}' to the image."}) # Basic instruction, user can refine
+                            # Improved prompt for text injection
+                            prompt_tmpl = f"A photo of a street scene. The text '{attack_text}' is written on a sign or building naturally. Maintain photorealism."
+                            item['prompts'].append({'type': attack_type, 'text': prompt_tmpl}) # Basic instruction, user can refine
                     else:
                         # Fallback for simple metadata file -> use CLI prompt
                         item['prompts'].append({'type': args.mode, 'text': args.prompt})
