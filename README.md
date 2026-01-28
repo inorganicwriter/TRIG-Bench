@@ -45,6 +45,22 @@ cd TRIG-Bench
 pip install -r requirements.txt
 ```
 
+## 🖥️ Server Deployment
+
+For deploying the Qwen3-VL vLLM service, you can use the following command (auto TP=2 for 30B model):
+
+```bash
+vllm serve "/home/nas/lsr/huggingface/Qwen/Qwen3-VL-30B-A3B-Thinking" \
+  --dtype auto \
+  --trust-remote-code \
+  --max-model-len 8192 \
+  --tensor-parallel-size 2 \
+  --gpu-memory-utilization 0.9 \
+  --host 0.0.0.0 \
+  --port 8001 \
+  --api-key qwen-local-key
+```
+
 ---
 
 ## 📖 使用指南
