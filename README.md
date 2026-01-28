@@ -2,54 +2,41 @@
 
 **评估视觉语言模型 (VLMs) 在面对对抗性文本攻击时，其地理定位任务的鲁棒性表现。**
 
-TRIG-Bench 提供了一套基于 **LLM (Qwen3-VL)** 和 **ComfyUI** 的全自动化对抗样本生成与评估流水线。它能生成具有高度欺骗性的“幻觉文本”，并将其逼真地融入街景图片中，从而精确测量模型在不同语义干扰下的定位偏差。
+TRIG-Bench 提供了一套全自动化的对抗样本生成与评估流水线，通过生成具有高度欺骗性的“幻觉文本”并将其融入街景图片，精确测量模型在不同语义干扰下的定位偏差。
 
 ---
 
-## 🚀 核心架构
+## 📚 完整工作流程 (Complete Workflow)
 
-本基准测试包含三个核心阶段：
+### 1. 环境配置 (Environment Configuration)
 
-1.  **攻击生成 (Attack Generation)**
-    *   **引擎**: `Qwen/Qwen3-VL-30B-A3B-Thinking`
-    *   **策略**: 根据原始图片内容，智能生成三种类型的干扰文本：
-        *   🔤 **Similar**: 形似/音似词（如 McDonald's -> McDonnel's）。
-        *   🎲 **Random**: 随机无关词。
-        *   😈 **Adversarial**: 语义相反或误导性强的词（如将 "Stop" 改为 "Go"，或地名误导）。
-
-2.  **图像合成 (Image Synthesis)**
-    *   **引擎**: **ComfyUI** (Local API)
-    *   **技术**: 利用 VLM 指令编辑能力 (`image_qwen_image_edit` 工作流)，通过 Prompt 引导将干扰文本自然地“生长”在图片中，保持光影和透视的一致性。
-
-3.  **效能评估 (Evaluation with Paper Metrics)**
-    *   **指标**:
-        *   **WLA (Weighted Localization Accuracy)**: 分级加权定位精度 (1km - 2500km 多尺度)。
-        *   **TBS (Text Bias Score)**: 文本偏差分数 ($Error_{Adv} - Error_{Clean}$)，量化干扰造成的额外误差。
-        *   **TFR (Trap Fall Rate)**: 陷阱命中率（实验性）。
-
----
-
-## 🛠️ 环境要求
-
-*   **Python 3.10+**
-*   **核心依赖**: `openai` (vLLM client), `torch`, `matplotlib`, `seaborn`, `folium` (见 `requirements.txt`)
-*   **服务依赖**:
-    *   **ComfyUI**: 需在本地 `127.0.0.1:8188` 启动，并安装 Qwen-Image-Edit 相关工作流节点。
-    *   **vLLM**: 需部署 `Qwen/Qwen3-VL-30B-A3B-Thinking` 模型，默认端口 `8001`。
-
-## 📦 安装
+建议使用 Conda 创建隔离环境：
 
 ```bash
+# 1. 创建并激活环境
+conda create -n trig python=3.10 -y
+conda activate trig
+
+# 2. 克隆项目
 git clone https://github.com/inorganicwriter/TRIG-Bench.git
 cd TRIG-Bench
+
+# 3. 安装依赖
+# 包含 openai, torch, matplotlib, folium 等
 pip install -r requirements.txt
 ```
 
-## 🖥️ Server Deployment
+---
 
-For deploying the Qwen3-VL vLLM service, you can use the following command (auto TP=2 for 30B model):
+### 2. 启动基础服务 (Start Basic Programs)
+
+本基准测试依赖两个核心服务：**大模型推理服务 (vLLM)** 和 **图像合成服务 (ComfyUI)**。
+
+#### A. 启动 Qwen3-VL 服务 (vLLM)
+在拥有 A100/A800/L20 等大显存 GPU 的服务器上运行：
 
 ```bash
+# 自动检测 TP=2 (适用于 30B 模型)，监听 8001 端口
 vllm serve "/home/nas/lsr/huggingface/Qwen/Qwen3-VL-30B-A3B-Thinking" \
   --dtype auto \
   --trust-remote-code \
@@ -61,23 +48,34 @@ vllm serve "/home/nas/lsr/huggingface/Qwen/Qwen3-VL-30B-A3B-Thinking" \
   --api-key qwen-local-key
 ```
 
+#### B. 启动 ComfyUI 服务
+在本地或服务器上启动 ComfyUI（需安装 Qwen-Image-Edit 节点）：
+
+```bash
+# 进入 ComfyUI 目录
+cd ComfyUI
+# 启动并监听端口 (默认为 8188)
+python main.py --listen 0.0.0.0 --port 8188
+```
+
 ---
 
-## 📖 使用指南
+### 3. 执行基准测试 (Run Benchmark)
 
-### 第一步：生成攻击配置 (Generate Attacks)
-使用 LLM 分析原图并生成攻击策略。
+#### Step 1: 生成攻击配置 (Generate Attacks)
+让 LLM (Qwen3-VL) 分析原始图片，生成 Similar/Random/Adversarial 三种攻击策略。
 
 ```bash
 python data_collector/generate_attacks.py \
   --clean-meta ./data/clean_images/metadata.jsonl \
   --original-dir ./data/raw_images \
   --output ./data/attacks.jsonl \
-  --model "Qwen/Qwen3-VL-30B-A3B-Thinking"
+  --model "Qwen/Qwen3-VL-30B-A3B-Thinking" \
+  --api-base http://localhost:8001/v1
 ```
 
-### 第二步：合成对抗样本 (Synthesize)
-调用 ComfyUI 将文字注入图片。
+#### Step 2: 合成对抗样本 (Synthesize Images)
+通过 ComfyUI 将生成的干扰文本逼真地注入到图片中。
 
 ```bash
 python main_benchmark.py \
@@ -86,25 +84,35 @@ python main_benchmark.py \
   --comfy-server 127.0.0.1:8188
 ```
 
-### 第三步：模型评估 (Evaluate)
-运行评估脚本，计算 MGD, WLA, TBS 等指标。
+---
+
+### 4. 获取与分析结果 (Get Results)
+
+#### Step 3: 模型表现评估 (Evaluate)
+将合成的对抗图片喂给模型，计算**平均误差距离 (MGD)**、**加权定位精度 (WLA)** 和 **文本偏差分数 (TBS)**。
 
 ```bash
 python evaluate.py \
   --img-dir ./data/bench_dataset \
   --metadata-file ./data/yfcc100m_dataset.txt \
   --bench-meta ./data/bench_dataset/benchmark_meta.jsonl \
-  --output ./results_qwen.jsonl
+  --output ./results_qwen.jsonl \
+  --api-base http://localhost:8001/v1
 ```
 
-### 第四步：可视化分析 (Visualize)
-生成 CDF 曲线、误差柱状图和交互式地图。
+#### Step 4: 可视化分析 (Visualize)
+生成详细的图表报告：
+*   📈 **CDF 曲线**: 误差累积分布
+*   📊 **柱状图**: clean vs adversarial 性能对比
+*   🗺️ **交互地图**: 幻觉连线可视化
 
 ```bash
 python visualize_results.py \
   --results Qwen3-VL=./results_qwen.jsonl \
   --output-dir ./results_viz
 ```
+
+生成的图表将保存在 `./results_viz` 目录下。
 
 ---
 
