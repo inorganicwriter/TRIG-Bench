@@ -2,18 +2,69 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.egg-info/
+dist/
+build/
+.eggs/
 
-# Data
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Data & Images (large binary files, stored on server)
 data/
 *.jpg
+*.jpeg
 *.png
+*.webp
+*.gif
+*.bmp
+
+# Result files (generated at runtime, not source code)
 *.jsonl
-results_*.jsonl
+result/
+results/
+
+# Intermediate / runtime-generated files
+geocode_cache.json
+parsed_results.json
+paper/computed_results.json
+paper/table1_data.json
+paper/im2gps3kresults/
+paper/yfcc4kresults/
+
+# Internal docs / chat logs / refactoring notes (not part of public repo)
+"Refactoring LLM Pipeline.md"
+"Refactoring Pipeline Stages.md"
+Refactoring*.md
+EVALUATION_GUIDE.md
+paper_issues_to_fix.md
+
+# Model list snapshots (auto-generated reference files)
+model_openrouter.txt
+model_siliconflow.txt
+
+# Verification / debug scripts
+verify_models.py
+check_googlesv.py
+PROJECT_ANALYSIS.md
 
 # Editor
 .vscode/
 .idea/
+*.swp
+*.swo
 
 # OS
 .DS_Store
 Thumbs.db
+
+# Logs
+*.log
+nohup.out
+
+# Secrets (never commit API keys)
+.env
+*.env
+secrets.txt

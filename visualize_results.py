@@ -33,17 +33,21 @@ def load_data(results_args):
             for line in f:
                 try:
                     entry = json.loads(line)
-                    filename = entry['filename']
                     
-                    # Parse Attack Type
-                    attack_type = "unknown"
-                    if "_similar_" in filename: attack_type = "similar"
-                    elif "_random_" in filename: attack_type = "random"
-                    elif "_adversarial_" in filename: attack_type = "adversarial"
-                    elif "_clean" in filename: attack_type = "clean"
+                    # Prefer attack_type field from JSONL (set by evaluate.py)
+                    # Fallback to filename-based heuristic for legacy files
+                    attack_type = entry.get('attack_type', None)
+                    if not attack_type or attack_type == 'unknown':
+                        filename = entry.get('filename', '')
+                        if "_similar_" in filename: attack_type = "similar"
+                        elif "_random_" in filename: attack_type = "random"
+                        elif "_adversarial_" in filename: attack_type = "adversarial"
+                        elif "_blank" in filename.lower(): attack_type = "blank"
+                        elif "_clean" in filename: attack_type = "clean"
+                        else: attack_type = "original"
                     
                     entry['model'] = model_name
-                    entry['attack_type'] = attack_type
+                    entry['attack_type'] = attack_type.lower()
                     all_data.append(entry)
                 except:
                     pass

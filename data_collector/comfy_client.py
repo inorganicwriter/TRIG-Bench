@@ -29,11 +29,12 @@ class ComfyClient:
 
     def upload_image(self, image_path):
         """Upload an image to ComfyUI input directory."""
-        files = {"image": open(image_path, 'rb')}
         try:
-            response = requests.post(f"http://{self.server_address}/upload/image", files=files)
-            response.raise_for_status()
-            return response.json()["name"]
+            with open(image_path, 'rb') as img_file:
+                files = {"image": img_file}
+                response = requests.post(f"http://{self.server_address}/upload/image", files=files)
+                response.raise_for_status()
+                return response.json()["name"]
         except Exception as e:
             print(f"Error uploading image {image_path}: {e}")
             return None

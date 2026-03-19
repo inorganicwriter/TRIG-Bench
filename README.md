@@ -121,6 +121,7 @@ python visualize_results.py \
 ```text
 ├── data_collector/         # [模块] 攻击生成与 ComfyUI 客户端
 │   ├── generate_attacks.py # Step 1: LLM 攻击生成
+│   ├── llm_provider.py     # LLM 接口封装 (OpenAI/vLLM)
 │   ├── comfy_client.py     # ComfyUI 通信类
 │   └── image_qwen_image_edit.json # ComfyUI 工作流模板
 ├── evaluation/             # [模块] 评估指标计算
