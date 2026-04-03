@@ -53,7 +53,7 @@
   \fbox{\parbox[c][0.28\textheight][c]{0.92\linewidth}{\centering\textbf{Figure Placeholder}\\#1\\\small (#2)}}%
 }
 
-\title{TRIG-Bench: Evaluating Textual Adversarial Robustness for Visual Geo-localization with Multimodal Large Models}
+\title{SIGNPOST-Bench: Evaluating Textual Adversarial Robustness for Visual Geo-localization with Multimodal Large Models}
 \author{Sirun Li\\School of Earth and Space Sciences}
 \date{March 2026}
 
@@ -64,11 +64,11 @@
 %  ABSTRACT
 % ===========================================================================
 \begin{abstract}
-Multimodal large language models (MLLMs) have demonstrated remarkable zero-shot visual geo-localization capabilities by integrating scene understanding with world knowledge. However, these models frequently exhibit a critical vulnerability: excessive reliance on embedded scene text (OCR bias), where textual cues override global visual evidence such as vegetation, geomorphology, and architectural style. To systematically quantify this failure mode, we propose \textbf{TRIG-Bench} (Text Robustness In Geo-localization Benchmark), a fully automated adversarial evaluation framework.
+Multimodal large language models (MLLMs) have demonstrated remarkable zero-shot visual geo-localization capabilities by integrating scene understanding with world knowledge. However, these models frequently exhibit a critical vulnerability: excessive reliance on embedded scene text (OCR bias), where textual cues override global visual evidence such as vegetation, geomorphology, and architectural style. To systematically quantify this failure mode, we propose \textbf{SIGNPOST-Bench} (\textbf{S}cene \textbf{I}mage \textbf{G}eo-localization with \textbf{N}oisy \textbf{P}erturbation on \textbf{O}bserved \textbf{S}ign \textbf{T}ext), a fully automated adversarial evaluation framework.
 
-TRIG-Bench introduces an \emph{LLM-in-the-loop} pipeline that operates in four stages: (1)~filtering images containing legible text via OCR pre-screening, (2)~employing a frontier VLM to analyze native scene text and automatically generate three categories of semantically controlled replacement text---\emph{Similar}, \emph{Random}, and \emph{Adversarial}, (3)~photorealistically injecting the replacement text via ComfyUI-orchestrated image editing, and (4)~evaluating target models on both clean baselines (text removed) and adversarial variants. This counterfactual design isolates the causal effect of textual interference from confounding visual factors.
+SIGNPOST-Bench introduces an \emph{LLM-in-the-loop} pipeline that operates in four stages: (1)~filtering images containing legible text via OCR pre-screening, (2)~employing a frontier VLM to analyze native scene text and automatically generate three categories of semantically controlled replacement text---\emph{Similar}, \emph{Random}, and \emph{Adversarial}, (3)~photorealistically injecting the replacement text via ComfyUI-orchestrated image editing, and (4)~evaluating target models on both clean baselines (text removed) and adversarial variants. This counterfactual design isolates the causal effect of textual interference from confounding visual factors.
 
-We evaluate four representative MLLMs spanning 7B--30B parameters and two reasoning paradigms (chain-of-thought vs.\ instruction-following) on three geographically diverse datasets: YFCC4K, Im2GPS3K, and Google Street View. Results are reported using three complementary metrics: Weighted Localization Accuracy (WLA), Text Bias Score (TBS), and Trap-Fit Rate (TFR). The code and data are available at \url{https://github.com/inorganicwriter/TRIG-Bench}.
+We evaluate four representative MLLMs spanning 7B--30B parameters and two reasoning paradigms (chain-of-thought vs.\ instruction-following) on three geographically diverse datasets: YFCC4K, Im2GPS3K, and Google Street View. Results are reported using three complementary metrics: Weighted Localization Accuracy (WLA), Text Bias Score (TBS), and Trap-Fit Rate (TFR). The code and data are available at \url{https://github.com/inorganicwriter/SIGNPOST-Bench}.
 \end{abstract}
 
 \noindent\textbf{Keywords:} visual geo-localization; multimodal large language models; adversarial robustness; typographic attack; OCR bias; benchmark
@@ -89,9 +89,9 @@ However, this capability introduces a critical failure mode: \emph{modality domi
   \label{fig:ocr_bias_mechanism}
 \end{figure}
 
-This vulnerability relates to typographic attacks on image classifiers~\cite{typographic_attack,azuma2023defense,qraitem2024typo}. However, while prior studies focus on class-level confusion (e.g., misclassifying an ``apple'' as an ``iPod''), TRIG-Bench targets a spatial reasoning task where the attack \emph{redirects} the prediction to a specific geographical coordinate. Despite growing interest in MLLM robustness~\cite{hallusionbench,pope,naturalbench,mmrobustness}, the community lacks a benchmark that systematically evaluates text-induced bias in geo-localization with a rigorous counterfactual design.
+This vulnerability relates to typographic attacks on image classifiers~\cite{typographic_attack,azuma2023defense,qraitem2024typo}. However, while prior studies focus on class-level confusion (e.g., misclassifying an ``apple'' as an ``iPod''), SIGNPOST-Bench targets a spatial reasoning task where the attack \emph{redirects} the prediction to a specific geographical coordinate. Despite growing interest in MLLM robustness~\cite{hallusionbench,pope,naturalbench,mmrobustness}, the community lacks a benchmark that systematically evaluates text-induced bias in geo-localization with a rigorous counterfactual design.
 
-We introduce TRIG-Bench with the following contributions:
+We introduce SIGNPOST-Bench with the following contributions:
 
 \begin{enumerate}[leftmargin=2em]
   \item \textbf{A fully automated, LLM-driven adversarial pipeline.} We leverage a frontier VLM (Qwen3-VL-30B) to analyze scene text and generate three categories of replacement text---\emph{Similar}, \emph{Random}, and \emph{Adversarial}---spanning a semantic gradient from near-identical perturbation to deliberate geographic misdirection. This eliminates the need for manual distractor curation and produces context-aware, image-specific attacks.
@@ -105,8 +105,8 @@ We introduce TRIG-Bench with the following contributions:
 
 \begin{figure}[H]
   \centering
-  \figplaceholder{TRIG-Bench pipeline overview}{4-stage flow: OCR Filter → LLM Attack Gen → ComfyUI Synthesis → Multi-Model Evaluation}
-  \caption{Overall architecture of TRIG-Bench. The four-stage pipeline: (1) OCR-based text filtering, (2) LLM-driven attack generation, (3) ComfyUI image synthesis, and (4) multi-model evaluation with robustness metrics.}
+  \figplaceholder{SIGNPOST-Bench pipeline overview}{4-stage flow: OCR Filter → LLM Attack Gen → ComfyUI Synthesis → Multi-Model Evaluation}
+  \caption{Overall architecture of SIGNPOST-Bench. The four-stage pipeline: (1) OCR-based text filtering, (2) LLM-driven attack generation, (3) ComfyUI image synthesis, and (4) multi-model evaluation with robustness metrics.}
   \label{fig:pipeline_overview}
 \end{figure}
 
@@ -119,17 +119,17 @@ We introduce TRIG-Bench with the following contributions:
 \subsection{Visual geo-localization}
 Visual geo-localization has progressed from image retrieval~\cite{im2gps} to deep representation learning. Im2GPS~\cite{im2gps} pioneered the field by matching global image descriptors against geo-tagged databases. Subsequent work improved feature representations through region-level matching~\cite{pigeon} and contrastive alignment between images and geographic coordinates~\cite{geoclip}. StreetCLIP~\cite{streetclip} achieved zero-shot generalization by adapting CLIP to the geo-localization domain using diverse street-view data, while GeoReasoner~\cite{georeasoner} introduced chain-of-thought prompting for expert-level geographic reasoning with MLLMs. GEOBench-VLM~\cite{geobenchvlm} recently benchmarked VLMs on a range of geospatial tasks, finding that even the best-performing models achieve only moderate accuracy on geospatial understanding, underscoring the challenge of this domain.
 
-A parallel line of work studies \emph{cross-view} geo-localization, where satellite and ground-level image pairs are matched. Recent robustness benchmarks for cross-view tasks (e.g., CVUSA-C, CVACT-C~\cite{crossview_robustness}) measure model resilience under natural corruptions such as weather variations and sensor noise. TRIG-Bench differs from these efforts by focusing on the \emph{semantic-level} textual interference intrinsic to street-view scenes rather than pixel-level corruption.
+A parallel line of work studies \emph{cross-view} geo-localization, where satellite and ground-level image pairs are matched. Recent robustness benchmarks for cross-view tasks (e.g., CVUSA-C, CVACT-C~\cite{crossview_robustness}) measure model resilience under natural corruptions such as weather variations and sensor noise. SIGNPOST-Bench differs from these efforts by focusing on the \emph{semantic-level} textual interference intrinsic to street-view scenes rather than pixel-level corruption.
 
 \subsection{Typographic attacks on vision-language models}
 Typographic attacks exploit the text-reading capabilities of VLMs by embedding misleading text into images. Goh et al.~\cite{typographic_attack} first demonstrated that CLIP's multimodal neurons respond to handwritten text overlaid on images, enabling class-level confusion. Subsequent work has systematized this vulnerability: Azuma et al.~\cite{azuma2023defense} proposed defense strategies through prompt engineering, while Qraitem et al.~\cite{qraitem2024typo} introduced the TypoD benchmark for evaluating VLM distractibility under typographic interference. More recent work has explored \emph{self-generated} attacks, where the VLM itself proposes adversarial text~\cite{selfgenerated_typo}, and \emph{scene-coherent} attacks that blend naturalistically into the visual context~\cite{scenecoherent_typo}. The SCAM benchmark~\cite{scam} provides a large-scale dataset of real-world typographic attack images.
 
-TRIG-Bench extends the typographic attack paradigm in two key ways: (1)~we replace \emph{in-situ} scene text rather than overlaying new text, producing more photorealistic adversarial samples; and (2)~we measure \emph{location-specific} bias (geographic displacement) rather than class-level confusion, with metrics that quantify both the magnitude and directionality of the attack's effect.
+SIGNPOST-Bench extends the typographic attack paradigm in two key ways: (1)~we replace \emph{in-situ} scene text rather than overlaying new text, producing more photorealistic adversarial samples; and (2)~we measure \emph{location-specific} bias (geographic displacement) rather than class-level confusion, with metrics that quantify both the magnitude and directionality of the attack's effect.
 
 \subsection{MLLM robustness and hallucination evaluation}
 A growing body of work evaluates MLLMs for robustness and reliability. HallusionBench~\cite{hallusionbench} tests reasoning under visual illusions and context manipulation. POPE~\cite{pope} measures object hallucination frequency. NaturalBench~\cite{naturalbench} evaluates models on naturally adversarial samples. MME~\cite{mme} and MMBench~\cite{mmbench} provide comprehensive multi-task evaluations, frequently including document or scene text understanding modules. These benchmarks collectively reveal that MLLMs are susceptible to various failure modes including over-reliance on language priors, visual grounding failures, and context misinterpretation.
 
-TRIG-Bench contributes to this ecosystem by providing a \emph{domain-specific} (geo-localization), \emph{intervention-based} (counterfactual pairing) benchmark with \emph{continuous} (rather than binary) outcome metrics, enabling fine-grained analysis of text--visual conflict in a safety-critical application domain.
+SIGNPOST-Bench contributes to this ecosystem by providing a \emph{domain-specific} (geo-localization), \emph{intervention-based} (counterfactual pairing) benchmark with \emph{continuous} (rather than binary) outcome metrics, enabling fine-grained analysis of text--visual conflict in a safety-critical application domain.
 
 
 % ===========================================================================
@@ -217,7 +217,7 @@ This tier addresses text that \emph{directly identifies} a geographic entity: st
 \begin{figure}[H]
   \centering
   \figplaceholder{3x3 Evaluation Matrix Diagram}{Visual grid showing Tier (T1, T2, T3) vs Attack Category (Similar, Random, Adversarial) with example perturbations.}
-  \caption{The two-dimensional evaluation matrix of TRIG-Bench, crossing original text coupling strength with attacked text semantic deviation.}
+  \caption{The two-dimensional evaluation matrix of SIGNPOST-Bench, crossing original text coupling strength with attacked text semantic deviation.}
   \label{fig:3x3_matrix}
 \end{figure}
 
@@ -226,10 +226,10 @@ This tier addresses text that \emph{directly identifies} a geographic entity: st
 
 
 % ===========================================================================
-%  4. THE TRIG-BENCH FRAMEWORK
+%  4. THE SIGNPOST-BENCH FRAMEWORK
 % ===========================================================================
-\section{The TRIG-Bench Framework}
-TRIG-Bench implements a fully automated, four-stage pipeline (Figure~\ref{fig:pipeline_overview}). Two external services underpin the system: a frontier VLM (Qwen3-VL-30B-A3B-Thinking~\cite{qwen3vl}) deployed via vLLM~\cite{vllm} for text analysis and model evaluation, and ComfyUI~\cite{comfyui} with the Qwen-Image-Edit model for photorealistic image editing.
+\section{The SIGNPOST-Bench Framework}
+SIGNPOST-Bench implements a fully automated, four-stage pipeline (Figure~\ref{fig:pipeline_overview}). Two external services underpin the system: a frontier VLM (Qwen3-VL-30B-A3B-Thinking~\cite{qwen3vl}) deployed via vLLM~\cite{vllm} for text analysis and model evaluation, and ComfyUI~\cite{comfyui} with the Qwen-Image-Edit model for photorealistic image editing.
 
 \subsection{Stage 1: Data collection and text filtering}
 To ensure the benchmark contains meaningful textual content, we first filter raw images using optical character recognition. We employ EasyOCR to detect legible text in each candidate image. Images with fewer than two detected characters are discarded, ensuring that only images where text is genuinely present---and potentially influential for geo-localization---enter the pipeline.
@@ -327,7 +327,7 @@ We define three complementary metrics (Table~\ref{tab:metrics_summary}).
 
 \begin{table}[H]
   \centering
-  \caption{Mathematical definitions of TRIG-Bench evaluation metrics}
+  \caption{Mathematical definitions of SIGNPOST-Bench evaluation metrics}
   \label{tab:metrics_summary}
   \resizebox{\textwidth}{!}{
     \begin{tabularx}{\textwidth}{l Y X}
@@ -369,7 +369,7 @@ TFR quantifies the \emph{directional} success of adversarial attacks. It measure
 
 \begin{table}[H]
   \centering
-  \caption{Models evaluated in TRIG-Bench}
+  \caption{Models evaluated in SIGNPOST-Bench}
   \label{tab:model_list}
   \begin{tabular}{llll}
     \toprule
@@ -495,7 +495,7 @@ The following ablations are planned to validate key design choices. Results will
     \toprule
     Setting & WLA $\uparrow$ & TBS $\downarrow$ & TFR $\downarrow$ \\
     \midrule
-    Full TRIG-Bench & -- & -- & -- \\
+    Full SIGNPOST-Bench & -- & -- & -- \\
     Raw baseline (no text removal) & -- & -- & -- \\
     FLUX editing backbone & -- & -- & -- \\
     ``Ignore text'' prompt & -- & -- & -- \\
@@ -508,7 +508,7 @@ The following ablations are planned to validate key design choices. Results will
 %  7. CONCLUSION
 % ===========================================================================
 \section{Conclusion}
-We present TRIG-Bench, an automated adversarial robustness benchmark for multimodal visual geo-localization that systematically exposes OCR bias. By constructing counterfactual image pairs---clean baselines and adversarial variants synthesized from the same source---and evaluating across a two-dimensional framework (three coupling tiers $\times$ three attack categories), TRIG-Bench provides a causal framework for quantifying text-induced localization bias with fine-grained diagnostic power.
+We present SIGNPOST-Bench, an automated adversarial robustness benchmark for multimodal visual geo-localization that systematically exposes OCR bias. By constructing counterfactual image pairs---clean baselines and adversarial variants synthesized from the same source---and evaluating across a two-dimensional framework (three coupling tiers $\times$ three attack categories), SIGNPOST-Bench provides a causal framework for quantifying text-induced localization bias with fine-grained diagnostic power.
 
 \textbf{Limitations.} Several limitations merit acknowledgment. First, the image editing quality depends on the Qwen-Image-Edit model; imperfect text rendering may introduce visual artifacts detectable by the target model, potentially confounding the text-only manipulation we intend to measure. Second, TFR computation currently requires geocoding the injected text to obtain trap coordinates, which is not fully automated in the current pipeline. Third, our evaluation covers only four models from two families (Qwen and GLM); broader coverage including proprietary models (GPT-4V, Gemini) would strengthen generalizability claims. Fourth, the scene-text coupling taxonomy (T1--T3) is applied via manual annotation, which limits the annotated subset size and introduces potential subjectivity; automating this classification (e.g., via an auxiliary LLM labeler) is a clear next step.
 

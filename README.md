@@ -1,6 +1,6 @@
 # SIGNPOST-Bench
 
-**Street Image Geo-localization with Noisy Perturbation on Observed Sign Text**
+**Scene Image Geo-localization with Noisy Perturbation on Observed Sign Text**
 
 评估视觉语言模型 (VLMs) 在面对对抗性文本攻击时，其地理定位任务的鲁棒性表现。
 
