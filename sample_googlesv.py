@@ -8,9 +8,9 @@ Usage:
     python sample_googlesv.py \
         --metadata /home/nas/lsr/Data/GoogleSV/metadata/panoids.csv \
         --images-root /home/nas/lsr/Data/GoogleSV/images \
-        --output-dir /home/nas/lsr/Data/TRIG-Bench/googlesv/sampled_images \
+        --output-dir /home/nas/lsr/Data/SIGNPOST-Bench/googlesv/sampled_images \
         --sample-rate 0.01 \
-        --output-csv /home/nas/lsr/Data/TRIG-Bench/googlesv/googlesv_metadata_address.csv
+        --output-csv /home/nas/lsr/Data/SIGNPOST-Bench/googlesv/googlesv_metadata_address.csv
 """
 
 import os

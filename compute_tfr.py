@@ -29,7 +29,7 @@ from urllib.parse import quote
 NOMINATIM_URL = "https://nominatim.openstreetmap.org/search"
 TRAP_RADIUS_KM = 50
 GEOCODE_CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), "geocode_cache.json")
-USER_AGENT = "TRIG-Bench/1.0 (research benchmark)"
+USER_AGENT = "SIGNPOST-Bench/1.0 (research benchmark)"
 RATE_LIMIT_SECONDS = 1.1  # Nominatim requires max 1 req/sec
 
 
@@ -246,7 +246,7 @@ def main():
                         help='Model short name')
     
     # Linux Server Data Directory
-    SERVER_DATA_DIR = "/home/nas/lsr/Data/TRIG-Bench"
+    SERVER_DATA_DIR = "/home/nas/lsr/Data/SIGNPOST-Bench"
     parser.add_argument('--base-dir', type=str, default=SERVER_DATA_DIR,
                         help='Base directory')
     parser.add_argument('--all-tiers', action='store_true',
@@ -254,7 +254,7 @@ def main():
     args = parser.parse_args()
     
     print("=" * 50)
-    print("  TRIG-Bench Trap-Fit Rate (TFR) Computation")
+    print("  SIGNPOST-Bench Trap-Fit Rate (TFR) Computation")
     print("=" * 50)
     
     dataset_dir = os.path.join(args.base_dir, args.dataset)

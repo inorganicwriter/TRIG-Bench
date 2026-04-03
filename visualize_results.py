@@ -7,7 +7,7 @@ import seaborn as sns
 import math
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Visualize TRIG-Bench Multi-Model Benchmark")
+    parser = argparse.ArgumentParser(description="Visualize SIGNPOST-Bench Multi-Model Benchmark")
     # Allow multiple inputs in format: ModelName=Path
     parser.add_argument("--results", nargs='+', required=True, 
                         help="List of results files in format 'ModelName=path/to/results.jsonl' (e.g. Qwen=res_qwen.jsonl GPT4=res_gpt4.jsonl)")

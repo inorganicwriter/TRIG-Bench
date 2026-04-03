@@ -49,8 +49,12 @@
 #                 mistral-medium-3.1, glm-4.6v, glm-4.5v,
 #                 nova-pro, nova-lite
 #
-# Datasets: yfcc4k, im2gps3k, googlesv
-#   (default: all three when no dataset is specified, or use "all")
+#   Free (OpenRouter, $0, vision-capable, for testing):
+#                 gemma3-27b-free, gemma3-12b-free, gemma3-4b-free,
+#                 mistral-small-3.1-free, nemotron-nano-12b-vl-free
+#
+# Datasets: yfcc4k, im2gps3k, googlesv, baidusv
+#   (default: all four when no dataset is specified, or use "all")
 #
 # API Key Resolution Order:
 #   1. Command-line argument (3rd positional arg)
@@ -91,7 +95,7 @@ MODEL=$1
 if [ $# -ge 2 ] && [ "$2" != "all" ]; then
     DATASETS=("$2")
 else
-    DATASETS=("yfcc4k" "im2gps3k" "googlesv")
+    DATASETS=("yfcc4k" "im2gps3k" "googlesv" "baidusv")
 fi
 
 # API key: from argument or environment variable

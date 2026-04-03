@@ -191,13 +191,13 @@ def main():
                         help='Dataset names to process')
     
     # Linux Server Data Directory
-    SERVER_DATA_DIR = "/home/nas/lsr/Data/TRIG-Bench"
+    SERVER_DATA_DIR = "/home/nas/lsr/Data/SIGNPOST-Bench"
     parser.add_argument('--base-dir', type=str, default=SERVER_DATA_DIR,
                         help='Base directory containing dataset folders')
     args = parser.parse_args()
     
     print("=" * 50)
-    print("  TRIG-Bench Scene-Text Taxonomy Classifier")
+    print("  SIGNPOST-Bench Scene-Text Taxonomy Classifier")
     print("=" * 50)
     
     all_results = []

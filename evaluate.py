@@ -271,7 +271,7 @@ def main():
                 except: pass
 
     print("\n" + "="*30)
-    print("  TRIG-Bench Evaluation Report")
+    print("  SIGNPOST-Bench Evaluation Report")
     print("="*30)
     if valid_count > 0:
         print(f"Mean WLA Score: {total_wla/valid_count*100:.2f}%")

@@ -22,33 +22,78 @@ def parse_args():
     parser.add_argument("--limit", type=int, default=0, help="Limit number of images processed")
     return parser.parse_args()
 
-async def process_single_image(provider, image_path, original_filename, clean_img_rel_path):
+
+def build_attack_prompt(location_info: dict = None) -> str:
+    """
+    Build the attack generation prompt.
+    
+    If location_info is provided (with keys like 'city', 'province', 'country'),
+    it is injected so the LLM can generate geographically-aware adversarial attacks.
+    """
+    # Build location context string
+    loc_context = ""
+    if location_info:
+        parts = []
+        for key in ['city', 'county', 'province', 'country']:
+            val = location_info.get(key, '').strip()
+            if val:
+                parts.append(val)
+        if parts:
+            loc_context = f"\n    **Ground-truth location**: {', '.join(parts)}\n"
+
+    prompt = f"""Analyze ALL legible text in this street view image for a geo-localization robustness study.
+{loc_context}
+**Your task:**
+
+1. **Identify the MOST geo-informative text** in the image — text that helps determine the photo's location.
+   Priority: street/road signs > city/district names > store names with location cues > other text.
+   If multiple texts exist, pick the single most location-revealing one.
+
+2. **Describe WHERE this text appears** in the image using natural language
+   (e.g., "on the blue street sign at the top-left", "on the red storefront banner in the center").
+
+3. **IF NO LEGIBLE TEXT IS FOUND**, return {{"original_text": null, "text_location": null, "attacks": {{}}}}.
+
+4. **Generate 3 replacement texts** designed to test a geo-localization model's robustness:
+
+   - **"similar"**: A text that looks plausible in the same region/language but subtly differs.
+     It should NOT change the perceived location significantly.
+     Examples: "北京路" → "北京东路", "Main St" → "Main Street", "星巴克" → "星巴咖啡"
+   
+   - **"random"**: A text completely unrelated to the location, in a DIFFERENT language or script
+     from the original. It should look obviously out-of-place.
+     Examples: "北京路" → "Sunset Blvd", "Main St" → "カフェ通り", "Starbucks" → "第五大道"
+   
+   - **"adversarial"**: A text specifically designed to MISLEAD a geo-localization model into
+     predicting a WRONG location far from the true one. It must be a real place name or
+     landmark from a DIFFERENT country/region, written in a way that looks natural on the sign.
+     Examples: "北京路" → "Broadway", "Rue de Rivoli" → "新宿通り", "Oxford St" → "南京路"
+
+**Rules for generated texts:**
+- Keep replacement texts SHORT (similar length to original, max ~15 characters).
+- The replacement must be visually plausible on the same sign/surface.
+- Adversarial text MUST reference a real location far from the ground truth.
+- Use the same script/font style as original where possible (except "random" which deliberately differs).
+
+**Output JSON ONLY** (no explanation, no markdown):
+{{
+    "original_text": "the identified text",
+    "text_location": "natural language description of where in the image",
+    "attacks": {{
+        "similar": "replacement text",
+        "random": "replacement text",
+        "adversarial": "replacement text"
+    }}
+}}"""
+    return prompt
+
+
+async def process_single_image(provider, image_path, original_filename, clean_img_rel_path,
+                                location_info=None):
     """
     Process a single image to generate attacks using the provider.
     """
-    prompt = """
-    Analyze the text in this street view image.
-    
-    Task:
-    1. Identify the main text content (e.g., store names, road signs).
-    2. Describe WHERE the text is located in the image using natural language (e.g., "on the green storefront sign at the top center", "on the blue street sign on the left").
-    3. IF NO LEGIBLE TEXT IS FOUND, do NOT generate any attacks. Return an empty "attacks" object.
-    4. If text is found, generate 3 types of short distraction texts to replace it:
-       - "Similar": Visually or semantically similar (e.g., McDonald's -> McDonalds).
-       - "Random": A completely unrelated word or short phrase.
-       - "Adversarial": Text that conveys the opposite meaning or misleading info (e.g., 'Stop' -> 'Go', or a different city name 'Paris').
-    
-    Output JSON format ONLY:
-    {
-        "original_text": "...", (or null if no text found)
-        "text_location": "...", (natural language description of where the text is in the image)
-        "attacks": {
-            "similar": "...",
-            "random": "...",
-            "adversarial": "..."
-        }
-    }
-    """
+    prompt = build_attack_prompt(location_info)
     
     result = await provider.analyze_image_async(
         image_path=Path(image_path),
@@ -142,8 +187,17 @@ async def main_async():
                     # File not in filtered_images, skip silently
                     skipped_count += 1
                     return None
+            
+            # Extract location info from metadata for geo-aware adversarial attacks
+            location_info = {
+                'city': entry.get('city', ''),
+                'county': entry.get('county', ''),
+                'province': entry.get('province', entry.get('state', '')),
+                'country': entry.get('country', ''),
+            }
                 
-            return await process_single_image(provider, original_path, fname, clean_rel_path)
+            return await process_single_image(provider, original_path, fname, clean_rel_path,
+                                               location_info=location_info)
 
     results = []
     for i, entry in enumerate(clean_entries):

@@ -4,7 +4,7 @@ import argparse
 import os
 
 def main():
-    parser = argparse.ArgumentParser(description="Convert User CSV Metadata to TRIG-Bench Formats")
+    parser = argparse.ArgumentParser(description="Convert User CSV Metadata to SIGNPOST-Bench Formats")
     parser.add_argument("--csv", type=str, required=True, help="Input CSV path (e.g. yfcc4k_metadata_address.csv)")
     parser.add_argument("--out-dir", type=str, required=True, help="Output directory for converted metadata")
     parser.add_argument("--dataset-name", type=str, default="yfcc4k", help="Dataset name prefix")

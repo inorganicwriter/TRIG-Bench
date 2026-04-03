@@ -8,11 +8,12 @@ from pathlib import Path
 # Fixed Base Paths (Hardcoded as requested)
 RAW_DATA_ROOT = Path("/home/nas/lsr/Data/dataset")
 GOOGLESV_ROOT = Path("/home/nas/lsr/Data/GoogleSV")
-TRIG_BENCH_ROOT = Path("/home/nas/lsr/Data/TRIG-Bench")
-CODE_DIR = Path("/home/nas/lsr/Code/TRIG-Bench")
+BAIDUSV_ROOT = Path("/home/nas/lsr/BaiduSvs_history/output")
+TRIG_BENCH_ROOT = Path("/home/nas/lsr/Data/SIGNPOST-Bench")
+CODE_DIR = Path("/home/nas/lsr/Code/SIGNPOST-Bench")
 
 # Services
-LOCAL_API_BASE = "http://localhost:8001/v1"
+LOCAL_API_BASE = "http://0.0.0.0:8001/v1"
 DEFAULT_MODEL = "qwen3-30b"
 COMFY_SERVER = "127.0.0.1:8188"
 
@@ -45,7 +46,7 @@ def resolve_model(model_arg):
     return model_arg, base, LOCAL_API_BASE
 
 def parse_args():
-    parser = argparse.ArgumentParser(description="Run TRIG-Bench Pipeline for a specific dataset")
+    parser = argparse.ArgumentParser(description="Run SIGNPOST-Bench Pipeline for a specific dataset")
     parser.add_argument("--dataset", type=str, required=True, help="Name of the dataset (e.g., yfcc4k, im2gps3k)")
     parser.add_argument("--stage", type=str, choices=['all', 'attack_gen', 'synthesize', 'evaluate'], default='all', 
                         help="Run a specific stage. 'attack_gen' includes filtering, metadata, and LLM generation. Default: all")
@@ -75,7 +76,10 @@ def get_paths(dataset_name, raw_img_dir_override=None):
     if raw_img_dir_override:
         raw_img_dir = Path(raw_img_dir_override)
     elif dataset_name == "googlesv":
-        # GoogleSV uses sampled images in the TRIG-Bench work directory
+        # GoogleSV uses sampled images in the SIGNPOST-Bench work directory
+        raw_img_dir = work_dir / "sampled_images"
+    elif dataset_name == "baidusv":
+        # BaiduSV uses sampled & cropped images in the SIGNPOST-Bench work directory
         raw_img_dir = work_dir / "sampled_images"
     else:
         img_subdir = IMAGE_DIR_OVERRIDES.get(dataset_name, dataset_name)
@@ -84,6 +88,8 @@ def get_paths(dataset_name, raw_img_dir_override=None):
     # Metadata CSV location
     if dataset_name == "googlesv":
         raw_meta_csv = work_dir / "googlesv_metadata_address.csv"
+    elif dataset_name == "baidusv":
+        raw_meta_csv = work_dir / "baidusv_metadata.csv"
     else:
         raw_meta_csv = RAW_DATA_ROOT / dataset_name / f"{dataset_name}_metadata_address.csv"
     
@@ -237,6 +243,8 @@ def main():
                                          baseline_path=original_result_file))
             else:
                 print(f"Skipping evaluation for {subdir} (Directory not found)")
+
+    print(f"\nPipeline execution for stage '{args.stage}' completed!")
 
     print(f"\nPipeline completed successfully! Check results in {paths['results_dir']}")
 

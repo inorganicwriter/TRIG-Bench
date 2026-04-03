@@ -49,6 +49,9 @@ model_siliconflow.txt
 verify_models.py
 check_googlesv.py
 PROJECT_ANALYSIS.md
+test_openrouter.py
+fetch_free_models.py
+dataset.txt
 
 # Editor
 .vscode/

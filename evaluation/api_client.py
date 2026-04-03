@@ -35,7 +35,7 @@ from typing import Optional, Tuple
 PROVIDER_CONFIGS = {
     # Local vLLM (self-hosted, no API key required)
     "local": {
-        "api_base": "http://localhost:8001/v1",
+        "api_base": "http://0.0.0.0:8001/v1",
         "requires_api_key": False,
         "default_api_key": "local-key",
         "supports_frequency_penalty": True,
@@ -69,8 +69,8 @@ PROVIDER_CONFIGS = {
         "max_image_size_mb": 20,
         "notes": "OpenRouter gateway. Supports GPT-4o, Claude, Gemini, Llama, etc.",
         "extra_headers": {
-            "HTTP-Referer": "https://github.com/inorganicwriter/TRIG-Bench",
-            "X-Title": "TRIG-Bench",
+            "HTTP-Referer": "https://github.com/inorganicwriter/SIGNPOST-Bench",
+            "X-Title": "SIGNPOST-Bench",
         },
     },
     # OpenAI direct
@@ -381,6 +381,153 @@ MODEL_REGISTRY = {
         "provider": "openrouter",
         "thinking": False,
     },
+
+    # =========================================================
+    # OpenRouter FREE Models (for testing / pipeline validation)
+    # These models have ":free" suffix and cost $0.
+    # Use these to verify the pipeline works before spending money.
+    #
+    # Fetched from: https://openrouter.ai/api/v1/models
+    # Last updated: 2026-03-28
+    #
+    # ⚠️  Only VISION models (text+image->text) are useful for SIGNPOST-Bench.
+    #     Text-only free models are listed but commented out.
+    # =========================================================
+
+    # --- Vision-capable FREE models (can process images) ---
+    "gemma3-27b-free": {
+        "model": "google/gemma-3-27b-it:free",
+        "provider": "openrouter",
+        "thinking": False,
+    },
+    "gemma3-12b-free": {
+        "model": "google/gemma-3-12b-it:free",
+        "provider": "openrouter",
+        "thinking": False,
+    },
+    "gemma3-4b-free": {
+        "model": "google/gemma-3-4b-it:free",
+        "provider": "openrouter",
+        "thinking": False,
+    },
+    "mistral-small-3.1-free": {
+        "model": "mistralai/mistral-small-3.1-24b-instruct:free",
+        "provider": "openrouter",
+        "thinking": False,
+    },
+    "nemotron-nano-12b-vl-free": {
+        "model": "nvidia/nemotron-nano-12b-v2-vl:free",
+        "provider": "openrouter",
+        "thinking": False,
+    },
+
+    # --- Text-only FREE models (cannot process images, NOT for evaluation) ---
+    # Kept here for reference; uncomment if needed for text-only tasks.
+    # "trinity-large-free": {
+    #     "model": "arcee-ai/trinity-large-preview:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "trinity-mini-free": {
+    #     "model": "arcee-ai/trinity-mini:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "dolphin-mistral-24b-free": {
+    #     "model": "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "gemma3n-e2b-free": {
+    #     "model": "google/gemma-3n-e2b-it:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "gemma3n-e4b-free": {
+    #     "model": "google/gemma-3n-e4b-it:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "lfm-2.5-1.2b-free": {
+    #     "model": "liquid/lfm-2.5-1.2b-instruct:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "lfm-2.5-1.2b-thinking-free": {
+    #     "model": "liquid/lfm-2.5-1.2b-thinking:free",
+    #     "provider": "openrouter",
+    #     "thinking": True,
+    # },
+    # "llama-3.2-3b-free": {
+    #     "model": "meta-llama/llama-3.2-3b-instruct:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "llama-3.3-70b-free": {
+    #     "model": "meta-llama/llama-3.3-70b-instruct:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "minimax-m2.5-free": {
+    #     "model": "minimax/minimax-m2.5:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "hermes-3-405b-free": {
+    #     "model": "nousresearch/hermes-3-llama-3.1-405b:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "nemotron-3-nano-30b-free": {
+    #     "model": "nvidia/nemotron-3-nano-30b-a3b:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "nemotron-3-super-120b-free": {
+    #     "model": "nvidia/nemotron-3-super-120b-a12b:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "nemotron-nano-9b-free": {
+    #     "model": "nvidia/nemotron-nano-9b-v2:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "gpt-oss-120b-free": {
+    #     "model": "openai/gpt-oss-120b:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "gpt-oss-20b-free": {
+    #     "model": "openai/gpt-oss-20b:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "qwen3-4b-free": {
+    #     "model": "qwen/qwen3-4b:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "qwen3-coder-free": {
+    #     "model": "qwen/qwen3-coder:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "qwen3-next-80b-free": {
+    #     "model": "qwen/qwen3-next-80b-a3b-instruct:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "step-3.5-flash-free": {
+    #     "model": "stepfun/step-3.5-flash:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
+    # "glm-4.5-air-free": {
+    #     "model": "z-ai/glm-4.5-air:free",
+    #     "provider": "openrouter",
+    #     "thinking": False,
+    # },
 }
 
 

@@ -115,9 +115,9 @@ def analyze_results(res_dir):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Compute TRIG-Bench Evaluation Results Summary")
-    parser.add_argument("--base-dir", type=str, default="/home/nas/lsr/Data/TRIG-Bench",
-                        help="Base directory containing dataset result folders (default: /home/nas/lsr/Data/TRIG-Bench)")
+    parser = argparse.ArgumentParser(description="Compute SIGNPOST-Bench Evaluation Results Summary")
+    parser.add_argument("--base-dir", type=str, default="/home/nas/lsr/Data/SIGNPOST-Bench",
+                        help="Base directory containing dataset result folders (default: /home/nas/lsr/Data/SIGNPOST-Bench)")
     parser.add_argument("--datasets", nargs='+', default=['im2gps3k', 'yfcc4k', 'googlesv'],
                         help="Datasets to compute results for (default: im2gps3k yfcc4k googlesv)")
     parser.add_argument("--output", type=str, default=None,
@@ -141,7 +141,7 @@ def main():
         json.dump(final_out, f, indent=2)
 
     print("="*60)
-    print("  TRIG-Bench Evaluation Results Summary")
+    print("  SIGNPOST-Bench Evaluation Results Summary")
     print("="*60)
     for ds, ds_data in final_out.items():
         if not ds_data: continue
